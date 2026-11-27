@@ -30,12 +30,12 @@ export default function BackupView() {
 
   async function exportCsv() {
     const [shifts, expenses] = await Promise.all([db.shifts.toArray(), db.expenses.toArray()]);
-    const rows = ["type,date,start,end,odo_start,odo_end,gross,tips,category,amount,liters"];
+    const rows = ["type,date,start,end,odo_start,odo_end,gross,tips,category,amount,liters,odometer,full_tank"];
     shifts.forEach((s) =>
-      rows.push(["shift", s.date, s.start, s.end, s.odoStart, s.odoEnd, s.gross, s.tips, "", "", ""].map(q).join(",")),
+      rows.push(["shift", s.date, s.start, s.end, s.odoStart, s.odoEnd, s.gross, s.tips, "", "", "", "", ""].map(q).join(",")),
     );
     expenses.forEach((e) =>
-      rows.push(["expense", e.date, "", "", "", "", "", "", e.cat, e.amount, e.liters].map(q).join(",")),
+      rows.push(["expense", e.date, "", "", "", "", "", "", e.cat, e.amount, e.liters, e.odometer ?? "", e.fullTank ? "yes" : ""].map(q).join(",")),
     );
     download(`driver-log-${stamp()}.csv`, rows.join("\n"), "text/csv");
     setMsg("CSV downloaded.");
@@ -63,6 +63,8 @@ export default function BackupView() {
         cat: (str(x.cat) in CATEGORIES ? str(x.cat) : "other") as Category,
         amount: num(x.amount),
         liters: num(x.liters),
+        odometer: num(x.odometer),
+        fullTank: x.fullTank === true,
       }));
       await db.transaction("rw", db.shifts, db.expenses, async () => {
         await db.shifts.clear();

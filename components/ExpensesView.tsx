@@ -6,7 +6,8 @@ import { useData } from "../lib/useData";
 import { brDate, money, nf, parseNum, today } from "../lib/format";
 import { CATEGORIES, type Category } from "../lib/types";
 
-const EMPTY = { date: "", amount: "", cat: "fuel", liters: "" };
+const EMPTY = { date: "", amount: "", cat: "fuel", liters: "", odo: "", full: true };
+type TextField = "date" | "amount" | "cat" | "liters" | "odo";
 
 export default function ExpensesView() {
   const { expenses, refresh } = useData();
@@ -16,8 +17,10 @@ export default function ExpensesView() {
     setF((p) => ({ ...p, date: today() }));
   }, []);
 
-  const set = (k: keyof typeof EMPTY) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: TextField) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF((p) => ({ ...p, [k]: e.target.value }));
+
+  const isFuel = f.cat === "fuel";
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -25,7 +28,9 @@ export default function ExpensesView() {
       date: f.date,
       cat: f.cat as Category,
       amount: parseNum(f.amount),
-      liters: parseNum(f.liters),
+      liters: isFuel ? parseNum(f.liters) : 0,
+      odometer: isFuel ? parseNum(f.odo) : 0,
+      fullTank: isFuel ? f.full : false,
     });
     await refresh();
     setF({ ...EMPTY, date: f.date, cat: f.cat });
@@ -62,14 +67,40 @@ export default function ExpensesView() {
               ))}
             </select>
           </label>
-          <label>
-            Liters (fuel only)
-            <input inputMode="decimal" placeholder="0" value={f.liters} onChange={set("liters")} />
-          </label>
+          {isFuel && (
+            <>
+              <label>
+                Liters
+                <input inputMode="decimal" placeholder="0" value={f.liters} onChange={set("liters")} />
+              </label>
+              <label>
+                Odometer (km)
+                <input inputMode="decimal" value={f.odo} onChange={set("odo")} />
+              </label>
+              <label
+                className="full"
+                style={{ flexDirection: "row", alignItems: "center", gap: 8, color: "var(--ink)" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={f.full}
+                  onChange={(e) => setF((p) => ({ ...p, full: e.target.checked }))}
+                  style={{ width: "auto" }}
+                />
+                Filled to full
+              </label>
+            </>
+          )}
           <button className="btn full" type="submit">
             Save expense
           </button>
         </form>
+        {isFuel && (
+          <div className="msg">
+            Liters, odometer, and &ldquo;Filled to full&rdquo; are needed for fuel economy. Untick the box when you
+            didn&rsquo;t fill the tank.
+          </div>
+        )}
       </div>
       <h2>History</h2>
       <div className="card">
@@ -81,6 +112,8 @@ export default function ExpensesView() {
               <small>
                 {CATEGORIES[x.cat]}
                 {x.liters ? ` · ${nf(x.liters)} L` : ""}
+                {x.odometer ? ` · ${nf(x.odometer, 0)} km` : ""}
+                {x.cat === "fuel" && x.fullTank ? " · full tank" : ""}
               </small>
               <button className="del" onClick={() => remove(x.id)}>
                 Delete

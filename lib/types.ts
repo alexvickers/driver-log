@@ -25,4 +25,6 @@ export type Expense = {
   cat: Category;
   amount: number;
   liters: number;
+  odometer?: number; // fuel entries: odometer at the pump
+  fullTank?: boolean; // fuel entries: tank was filled to full
 };

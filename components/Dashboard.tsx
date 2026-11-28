@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useData } from "../lib/useData";
-import { buckets, fuelStats, summarize, type Period } from "../lib/stats";
+import { buckets, fuelStats, periodStart, summarize, type Period } from "../lib/stats";
 import { hm, money, nf } from "../lib/format";
+import type { Category } from "../lib/types";
 import ProfitChart from "./ProfitChart";
 
 const LABELS: Record<Period, string> = {
@@ -19,6 +20,10 @@ export default function Dashboard() {
   const data = buckets(shifts, expenses, period);
   const fuel = fuelStats(shifts, expenses, period);
 
+  const from = periodStart(period);
+  const spentOn = (cat: Category) =>
+    expenses.filter((e) => e.cat === cat && e.date >= from).reduce((a, e) => a + e.amount, 0);
+
   const stats: [string, string][] = [
     ["Gross", money(s.gross)],
     ["Expenses", money(s.spent)],
@@ -28,6 +33,10 @@ export default function Dashboard() {
     ["Net per hour", s.netPerHour == null ? "–" : money(s.netPerHour)],
     ["Cost per km", s.costPerKm == null ? "–" : money(s.costPerKm)],
     ["Shifts", String(s.shifts)],
+    ["Coffee & energy drinks", money(spentOn("caffeine"))],
+    ["Coffee per shift", s.shifts ? money(spentOn("caffeine") / s.shifts) : "–"],
+    ["Meals", money(spentOn("food"))],
+    ["Meals per shift", s.shifts ? money(spentOn("food") / s.shifts) : "–"],
   ];
 
   const fuelCards: [string, string][] = fuel

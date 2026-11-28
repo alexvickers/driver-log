@@ -1,7 +1,16 @@
-export type Category = "fuel" | "maintenance" | "wash" | "tolls" | "other";
+export type Category =
+  | "fuel"
+  | "food"
+  | "caffeine"
+  | "maintenance"
+  | "wash"
+  | "tolls"
+  | "other";
 
 export const CATEGORIES: Record<Category, string> = {
   fuel: "Fuel",
+  food: "Meals",
+  caffeine: "Coffee & energy drinks",
   maintenance: "Maintenance",
   wash: "Car wash",
   tolls: "Tolls",
